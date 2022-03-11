@@ -22,6 +22,11 @@ func GenerateCodeQL(module CodeqlModuleSpec) (string, error) {
 				fmt.Println(err)
 			}
 		}
+		if module.SQLQueryStringSinkSpec != nil && !module.SQLQueryStringSinkSpec.IsEmpty() {
+			if err := module.SQLQueryStringSinkSpec.GenerateCodeQL(moduleGroup); err != nil {
+				fmt.Println(err)
+			}
+		}
 	})
 
 	codeqlFile, err := os.Create(module.ModuleName + ".qll")
@@ -72,6 +77,18 @@ func GenFunctionInputOutput(idName string, funcDecl FuncDeclMetaData) []cqljen.C
 	if len(funcDecl.Results) > 0 {
 		codeElements = append(codeElements,
 			cqljen.Id(idName).Dot("isResult").Call(cqljen.IntsToSetOrLit(funcDecl.Results...)),
+		)
+	}
+
+	return codeElements
+}
+
+func GenFunctionParam(idName string, funcDecl FuncDeclMetaData) []cqljen.Code {
+	codeElements := make([]cqljen.Code, 0)
+
+	if len(funcDecl.Parameters) > 0 {
+		codeElements = append(codeElements,
+			cqljen.Id(idName).Eq().Add(cqljen.IntsToSetOrLit(funcDecl.Parameters...)),
 		)
 	}
 

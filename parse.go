@@ -30,6 +30,7 @@ func LoadProject(patterns []string) ([]*packages.Package, error) {
 func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemill.CodeqlModuleSpec {
 	untrustedFlowSourceSpec := codemill.NewUntrustedFlowSourceSpec()
 	taintTrackingSpec := codemill.NewTaintTrackingSpec()
+	sqlquerystringsinkSpec := codemill.NewSQLQueryStringSinkSpec()
 	for _, v := range pkgs {
 		models := make(map[string][]*codemill.Selector)
 		for _, f := range v.Syntax {
@@ -37,11 +38,13 @@ func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemi
 		}
 		ExtractUntrustedFlowSourceSpec(v.PkgPath, models[codemill.UntrustedFlowSourceKind], untrustedFlowSourceSpec)
 		ExtractTaintTrackingSpec(v.PkgPath, models[codemill.TaintTrackingKind], taintTrackingSpec)
+		ExtractSQLQueryStringSinkSpec(v.PkgPath, models[codemill.SQLQueryStringSinkKind], sqlquerystringsinkSpec)
 	}
 	return codemill.CodeqlModuleSpec{
 		ModuleName:              moduleName,
 		UntrustedFlowSourceSpec: untrustedFlowSourceSpec,
 		TaintTrackingSpec:       taintTrackingSpec,
+		SQLQueryStringSinkSpec:  sqlquerystringsinkSpec,
 	}
 }
 
@@ -135,6 +138,48 @@ func ExtractTaintTrackingSpec(pkgPath string, taintTrackSels []*codemill.Selecto
 	}
 	if len(methods) > 0 {
 		taintTrackingSpec.Methods[pkgPath] = methods
+	}
+}
+
+func ExtractSQLQueryStringSinkSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.SQLQueryStringSinkSpec) {
+	var funcs []*codemill.FuncQualifier
+	methods := make(map[string][]*codemill.FuncQualifier)
+	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
+	for _, sel := range sels {
+		if sel.Kind == codemill.SelectorKindFunc {
+			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
+					funcs = append(funcs, fn)
+					continue
+				}
+				if len(fn.Receiver) > 0 {
+					if fns, ok := methods[fn.Receiver]; ok {
+						fns = append(fns, fn)
+						methods[fn.Receiver] = fns
+					} else {
+						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
+					}
+					continue
+				}
+				if len(fn.Interface) > 0 {
+					if fns, ok := interfaceMethods[fn.Interface]; ok {
+						fns = append(fns, fn)
+						interfaceMethods[fn.Interface] = fns
+					} else {
+						interfaceMethods[fn.Interface] = []*codemill.FuncQualifier{fn}
+					}
+				}
+			}
+		}
+	}
+	if len(funcs) > 0 {
+		spec.Funcs[pkgPath] = funcs
+	}
+	if len(methods) > 0 {
+		spec.Methods[pkgPath] = methods
+	}
+	if len(interfaceMethods) > 0 {
+		spec.InterfaceMethods[pkgPath] = interfaceMethods
 	}
 }
 
