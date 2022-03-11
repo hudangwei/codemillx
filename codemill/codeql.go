@@ -27,6 +27,11 @@ func GenerateCodeQL(module CodeqlModuleSpec) (string, error) {
 				fmt.Println(err)
 			}
 		}
+		if module.LoggerCallSpec != nil && !module.LoggerCallSpec.IsEmpty() {
+			if err := module.LoggerCallSpec.GenerateCodeQL(moduleGroup); err != nil {
+				fmt.Println(err)
+			}
+		}
 	})
 
 	codeqlFile, err := os.Create(module.ModuleName + ".qll")

@@ -12,6 +12,7 @@ const (
 	UntrustedFlowSourceKind = "untrust"
 	TaintTrackingKind       = "tainttrack"
 	SQLQueryStringSinkKind  = "sql"
+	LoggerCallKind          = "logger"
 )
 
 type CodeqlModuleSpec struct {
@@ -19,6 +20,7 @@ type CodeqlModuleSpec struct {
 	UntrustedFlowSourceSpec *UntrustedFlowSourceSpec
 	TaintTrackingSpec       *TaintTrackingSpec
 	SQLQueryStringSinkSpec  *SQLQueryStringSinkSpec
+	LoggerCallSpec          *LoggerCallSpec
 }
 
 type UntrustedFlowSourceSpec struct {
@@ -35,6 +37,12 @@ type TaintTrackingSpec struct {
 }
 
 type SQLQueryStringSinkSpec struct {
+	Funcs            map[string][]*FuncQualifier
+	Methods          map[string]map[string][]*FuncQualifier
+	InterfaceMethods map[string]map[string][]*FuncQualifier
+}
+
+type LoggerCallSpec struct {
 	Funcs            map[string][]*FuncQualifier
 	Methods          map[string]map[string][]*FuncQualifier
 	InterfaceMethods map[string]map[string][]*FuncQualifier

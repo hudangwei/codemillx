@@ -31,6 +31,7 @@ func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemi
 	untrustedFlowSourceSpec := codemill.NewUntrustedFlowSourceSpec()
 	taintTrackingSpec := codemill.NewTaintTrackingSpec()
 	sqlquerystringsinkSpec := codemill.NewSQLQueryStringSinkSpec()
+	loggercallSpec := codemill.NewLoggerCallSpec()
 	for _, v := range pkgs {
 		models := make(map[string][]*codemill.Selector)
 		for _, f := range v.Syntax {
@@ -39,12 +40,14 @@ func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemi
 		ExtractUntrustedFlowSourceSpec(v.PkgPath, models[codemill.UntrustedFlowSourceKind], untrustedFlowSourceSpec)
 		ExtractTaintTrackingSpec(v.PkgPath, models[codemill.TaintTrackingKind], taintTrackingSpec)
 		ExtractSQLQueryStringSinkSpec(v.PkgPath, models[codemill.SQLQueryStringSinkKind], sqlquerystringsinkSpec)
+		ExtractLoggerCallSpec(v.PkgPath, models[codemill.LoggerCallKind], loggercallSpec)
 	}
 	return codemill.CodeqlModuleSpec{
 		ModuleName:              moduleName,
 		UntrustedFlowSourceSpec: untrustedFlowSourceSpec,
 		TaintTrackingSpec:       taintTrackingSpec,
 		SQLQueryStringSinkSpec:  sqlquerystringsinkSpec,
+		LoggerCallSpec:          loggercallSpec,
 	}
 }
 
@@ -142,6 +145,48 @@ func ExtractTaintTrackingSpec(pkgPath string, taintTrackSels []*codemill.Selecto
 }
 
 func ExtractSQLQueryStringSinkSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.SQLQueryStringSinkSpec) {
+	var funcs []*codemill.FuncQualifier
+	methods := make(map[string][]*codemill.FuncQualifier)
+	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
+	for _, sel := range sels {
+		if sel.Kind == codemill.SelectorKindFunc {
+			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
+					funcs = append(funcs, fn)
+					continue
+				}
+				if len(fn.Receiver) > 0 {
+					if fns, ok := methods[fn.Receiver]; ok {
+						fns = append(fns, fn)
+						methods[fn.Receiver] = fns
+					} else {
+						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
+					}
+					continue
+				}
+				if len(fn.Interface) > 0 {
+					if fns, ok := interfaceMethods[fn.Interface]; ok {
+						fns = append(fns, fn)
+						interfaceMethods[fn.Interface] = fns
+					} else {
+						interfaceMethods[fn.Interface] = []*codemill.FuncQualifier{fn}
+					}
+				}
+			}
+		}
+	}
+	if len(funcs) > 0 {
+		spec.Funcs[pkgPath] = funcs
+	}
+	if len(methods) > 0 {
+		spec.Methods[pkgPath] = methods
+	}
+	if len(interfaceMethods) > 0 {
+		spec.InterfaceMethods[pkgPath] = interfaceMethods
+	}
+}
+
+func ExtractLoggerCallSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.LoggerCallSpec) {
 	var funcs []*codemill.FuncQualifier
 	methods := make(map[string][]*codemill.FuncQualifier)
 	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
@@ -322,7 +367,7 @@ func extractCommentGroupMetaData(f *ast.CommentGroup, typ string) (ret []Comment
 			}
 			return
 		}
-		if len(content) > 2 && content[0] == "@codeql" {
+		if len(content) > 1 && content[0] == "@codeql" {
 			var cfs []CommentFunc
 			for i := 2; i < len(content); i++ {
 				var cf CommentFunc

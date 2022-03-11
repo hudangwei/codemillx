@@ -6,17 +6,19 @@
 | 标记污点源| UntrustedFlowSource | //@codeql untrust | Result() Param() IsReceiver |
 | 标记污点传播函数| TaintTracking | //@codeql tainttrack | InParam() OutParam() OutResult() InIsReceiver OutIsReceiver |
 | 标记SQL语句| SQL::QueryString | //@codeql sql | Param() |
+| 标记日志打印| LoggerCall | //@codeql logger | 无 |
 
 ## 目前支持的codeql model
 * UntrustedFlowSource
 * TaintTracking
 * SQL::QueryString
+* LoggerCall
 
 ## 注释格式
 - //@codeql untrust Result(1)
 - //@codeql tainttrack InParam(0) OutResult(0)
 - //@codeql sql Param(0)
-
+- //@codeql logger
 ## 内置方法
 
 - Result 标记返回值是污点源 在//@codeql untrust使用
