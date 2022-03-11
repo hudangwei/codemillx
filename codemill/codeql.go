@@ -32,6 +32,11 @@ func GenerateCodeQL(module CodeqlModuleSpec) (string, error) {
 				fmt.Println(err)
 			}
 		}
+		if module.HTTPRedirectSpec != nil && !module.HTTPRedirectSpec.IsEmpty() {
+			if err := module.HTTPRedirectSpec.GenerateCodeQL(moduleGroup); err != nil {
+				fmt.Println(err)
+			}
+		}
 	})
 
 	codeqlFile, err := os.Create(module.ModuleName + ".qll")

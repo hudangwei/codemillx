@@ -13,6 +13,7 @@ const (
 	TaintTrackingKind       = "tainttrack"
 	SQLQueryStringSinkKind  = "sql"
 	LoggerCallKind          = "logger"
+	HTTPRedirectKind        = "redirect"
 )
 
 type CodeqlModuleSpec struct {
@@ -21,6 +22,7 @@ type CodeqlModuleSpec struct {
 	TaintTrackingSpec       *TaintTrackingSpec
 	SQLQueryStringSinkSpec  *SQLQueryStringSinkSpec
 	LoggerCallSpec          *LoggerCallSpec
+	HTTPRedirectSpec        *HTTPRedirectSpec
 }
 
 type UntrustedFlowSourceSpec struct {
@@ -46,6 +48,11 @@ type LoggerCallSpec struct {
 	Funcs            map[string][]*FuncQualifier
 	Methods          map[string]map[string][]*FuncQualifier
 	InterfaceMethods map[string]map[string][]*FuncQualifier
+}
+
+type HTTPRedirectSpec struct {
+	Funcs   map[string][]*FuncQualifier
+	Methods map[string]map[string][]*FuncQualifier
 }
 
 type Selector struct {
