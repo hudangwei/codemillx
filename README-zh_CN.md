@@ -21,6 +21,18 @@ go get github.com/hudangwei/codemillx/cmd/codemillx
 cd mywebapp && codemillx -module="mywebapp" ./...
 ```
 
+## 依赖项
+
+`codemillx`生成codeql模块时会调用`codeql`命令进行格式化，所以依赖本地PATH中有`codeql`。
+
+```sh
+codeql query format -qq -i mywebapp.ql
+```
+
+## 如何添加代码注释
+
+* [注释格式说明](docs/comment-zh_CN.md)
+
 ## 参考项目
 
 * [codemill](https://github.com/gagliardetto/codemill)
