@@ -8,7 +8,7 @@ import (
 	"github.com/gagliardetto/utilz"
 )
 
-func GenerateCodeQL(module CodeqlModuleSpec) (string, error) {
+func GenerateCodeQL(module CodeqlModuleSpec, output string) error {
 	cqlFile := cqljen.NewFile()
 	cqlFile.Import("go")
 	cqlFile.Private().Module().Id(utilz.ToCamel(module.ModuleName)).BlockFunc(func(moduleGroup *cqljen.Group) {
@@ -39,12 +39,12 @@ func GenerateCodeQL(module CodeqlModuleSpec) (string, error) {
 		}
 	})
 
-	codeqlFile, err := os.Create(module.ModuleName + ".qll")
+	codeqlFile, err := os.Create(output)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer codeqlFile.Close()
-	return codeqlFile.Name(), cqlFile.Render(codeqlFile)
+	return cqlFile.Render(codeqlFile)
 }
 
 func GetFuncQualifierCodeElements(qual *FuncQualifier) []cqljen.Code {
