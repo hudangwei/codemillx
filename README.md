@@ -18,7 +18,7 @@ go get github.com/hudangwei/codemillx/cmd/codemillx
 Navigate to your web application folder and execute:
 
 ```bash
-cd mywebapp && codemillx -module="mywebapp" ./...
+cd mywebapp && codemillx ./...
 ```
 
 ## Requirements
@@ -26,13 +26,15 @@ cd mywebapp && codemillx -module="mywebapp" ./...
 To allow cqlgen to format the generated codeql, you need a recent version of the codeql cli (otherwise it will not be formatted), and have it available as codeql in your PATH.
 
 ```sh
-codeql query format -qq -i mywebapp.ql
+codeql query format -qq -i Customizations.qll
 ```
 
 ## How to add comments in your code?
 
 * [Declarative Comments Format](docs/comment.md)
 
+## Usage
+* [How to use `Customizations.qll` file into Github CodeQL Action](docs/codeql-action.md)
 ## Reference
 
 * [codemill](https://github.com/gagliardetto/codemill)
