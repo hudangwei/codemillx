@@ -1,6 +1,7 @@
 在Github CodeQL Action中使用我们的`Customizations.qll`
 ===
 
+如果你看不懂本页内容，先学习下[如何在GitHub工作流中使用CodeQL检测代码](https://docs.microsoft.com/zh-cn/dotnet/architecture/devops-for-aspnet-developers/actions-codeql)
 ## 用法
 
 把以下配置添加在Initialize CodeQL步骤与Autobuild步骤之间。
