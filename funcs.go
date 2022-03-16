@@ -10,6 +10,12 @@ import (
 var funcs = make(Funcs)
 
 func init() {
+	funcs["Package"] = reflect.ValueOf(Package)
+	funcs["Func"] = reflect.ValueOf(Func)
+	funcs["Method"] = reflect.ValueOf(Method)
+	funcs["Interface"] = reflect.ValueOf(Interface)
+	funcs["Type"] = reflect.ValueOf(Type)
+	funcs["Field"] = reflect.ValueOf(Field)
 	funcs["Result"] = reflect.ValueOf(Result)
 	funcs["InResult"] = reflect.ValueOf(InResult)
 	funcs["OutResult"] = reflect.ValueOf(OutResult)
@@ -56,6 +62,65 @@ func (f Funcs) Call(name string, modelKind string, sel *codemill.Selector, param
 	}
 	result = f[name].Call(in)
 	return
+}
+
+func Package(modelKind string, sel *codemill.Selector, pkgPath string) {
+	if sel.Kind == codemill.SelectorKindFunc {
+		if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+			fn.PkgPath = pkgPath
+		}
+	} else if sel.Kind == codemill.SelectorKindStruct {
+		if v, ok := sel.Qualifier.(*codemill.StructQualifier); ok {
+			v.PkgPath = pkgPath
+		}
+	} else if sel.Kind == codemill.SelectorKindType {
+		if v, ok := sel.Qualifier.(*codemill.TypeQualifier); ok {
+			v.PkgPath = pkgPath
+		}
+	}
+}
+
+func Func(modelKind string, sel *codemill.Selector, funcName string) {
+	if sel.Kind == codemill.SelectorKindFunc {
+		if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+			fn.FunctionName = funcName
+		}
+	}
+}
+
+func Method(modelKind string, sel *codemill.Selector, meth, funcName string) {
+	if sel.Kind == codemill.SelectorKindFunc {
+		if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+			fn.Receiver = meth
+			fn.FunctionName = funcName
+		}
+	}
+}
+
+func Interface(modelKind string, sel *codemill.Selector, interfaceName, funcName string) {
+	if sel.Kind == codemill.SelectorKindFunc {
+		if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
+			fn.Interface = interfaceName
+			fn.FunctionName = funcName
+		}
+	}
+}
+
+func Type(modelKind string, sel *codemill.Selector, typeName string) {
+	if sel.Kind == codemill.SelectorKindType {
+		if v, ok := sel.Qualifier.(*codemill.TypeQualifier); ok {
+			v.TypeName = typeName
+		}
+	}
+}
+
+func Field(modelKind string, sel *codemill.Selector, structName string, fields []string) {
+	if sel.Kind == codemill.SelectorKindStruct {
+		if v, ok := sel.Qualifier.(*codemill.StructQualifier); ok {
+			v.StructName = structName
+			v.Fields = fields
+		}
+	}
 }
 
 func Result(modelKind string, sel *codemill.Selector, args []int) {

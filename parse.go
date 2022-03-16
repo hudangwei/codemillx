@@ -38,11 +38,11 @@ func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemi
 		for _, f := range v.Syntax {
 			parseComment(v.PkgPath, f, models)
 		}
-		ExtractUntrustedFlowSourceSpec(v.PkgPath, models[codemill.UntrustedFlowSourceKind], untrustedFlowSourceSpec)
-		ExtractTaintTrackingSpec(v.PkgPath, models[codemill.TaintTrackingKind], taintTrackingSpec)
-		ExtractSQLQueryStringSinkSpec(v.PkgPath, models[codemill.SQLQueryStringSinkKind], sqlquerystringsinkSpec)
-		ExtractLoggerCallSpec(v.PkgPath, models[codemill.LoggerCallKind], loggercallSpec)
-		ExtractHTTPRedirectSpec(v.PkgPath, models[codemill.HTTPRedirectKind], httpredirectSpec)
+		ExtractUntrustedFlowSourceSpec(models[codemill.UntrustedFlowSourceKind], untrustedFlowSourceSpec)
+		ExtractTaintTrackingSpec(models[codemill.TaintTrackingKind], taintTrackingSpec)
+		ExtractSQLQueryStringSinkSpec(models[codemill.SQLQueryStringSinkKind], sqlquerystringsinkSpec)
+		ExtractLoggerCallSpec(models[codemill.LoggerCallKind], loggercallSpec)
+		ExtractHTTPRedirectSpec(models[codemill.HTTPRedirectKind], httpredirectSpec)
 	}
 	return codemill.CodeqlModuleSpec{
 		ModuleName:              moduleName,
@@ -54,218 +54,153 @@ func ExtractCodeqlModuleSpec(moduleName string, pkgs []*packages.Package) codemi
 	}
 }
 
-func ExtractUntrustedFlowSourceSpec(pkgPath string, untrustSels []*codemill.Selector, untrustedFlowSourceSpec *codemill.UntrustedFlowSourceSpec) {
-	var types []*codemill.TypeQualifier
-	var structs []*codemill.StructQualifier
-	var funcs []*codemill.FuncQualifier
-	methods := make(map[string][]*codemill.FuncQualifier)
-	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
-	for _, sel := range untrustSels {
+func addFunc(funcs map[string][]*codemill.FuncQualifier, name string, fn *codemill.FuncQualifier) {
+	if v, ok := funcs[name]; ok {
+		v = append(v, fn)
+		funcs[name] = v
+	} else {
+		funcs[name] = []*codemill.FuncQualifier{fn}
+	}
+}
+
+func addMethod(methods map[string]map[string][]*codemill.FuncQualifier, fn *codemill.FuncQualifier) {
+	if v, ok := methods[fn.PkgPath]; ok {
+		addFunc(v, fn.Receiver, fn)
+	} else {
+		vv := make(map[string][]*codemill.FuncQualifier)
+		addFunc(vv, fn.Receiver, fn)
+		methods[fn.PkgPath] = vv
+	}
+}
+
+func addInterface(methods map[string]map[string][]*codemill.FuncQualifier, fn *codemill.FuncQualifier) {
+	if v, ok := methods[fn.PkgPath]; ok {
+		addFunc(v, fn.Interface, fn)
+	} else {
+		vv := make(map[string][]*codemill.FuncQualifier)
+		addFunc(vv, fn.Interface, fn)
+		methods[fn.PkgPath] = vv
+	}
+}
+
+func addType(types map[string][]*codemill.TypeQualifier, typ *codemill.TypeQualifier) {
+	if v, ok := types[typ.PkgPath]; ok {
+		v = append(v, typ)
+		types[typ.PkgPath] = v
+	} else {
+		types[typ.PkgPath] = []*codemill.TypeQualifier{typ}
+	}
+}
+
+func addStruct(sqs map[string][]*codemill.StructQualifier, sq *codemill.StructQualifier) {
+	if v, ok := sqs[sq.PkgPath]; ok {
+		v = append(v, sq)
+		sqs[sq.PkgPath] = v
+	} else {
+		sqs[sq.PkgPath] = []*codemill.StructQualifier{sq}
+	}
+}
+
+func ExtractUntrustedFlowSourceSpec(sels []*codemill.Selector, spec *codemill.UntrustedFlowSourceSpec) {
+	for _, sel := range sels {
 		if sel.Kind == codemill.SelectorKindType {
-			types = append(types, sel.Qualifier.(*codemill.TypeQualifier))
+			addType(spec.Types, sel.Qualifier.(*codemill.TypeQualifier))
 		} else if sel.Kind == codemill.SelectorKindStruct {
-			structs = append(structs, sel.Qualifier.(*codemill.StructQualifier))
+			addStruct(spec.StructFieldsmap, sel.Qualifier.(*codemill.StructQualifier))
 		} else if sel.Kind == codemill.SelectorKindFunc {
 			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
 				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
-					funcs = append(funcs, fn)
+					addFunc(spec.Funcs, fn.PkgPath, fn)
 					continue
 				}
 				if len(fn.Receiver) > 0 {
-					if fns, ok := methods[fn.Receiver]; ok {
-						fns = append(fns, fn)
-						methods[fn.Receiver] = fns
-					} else {
-						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
-					}
+					addMethod(spec.Methods, fn)
 					continue
 				}
 				if len(fn.Interface) > 0 {
-					if fns, ok := interfaceMethods[fn.Interface]; ok {
-						fns = append(fns, fn)
-						interfaceMethods[fn.Interface] = fns
-					} else {
-						interfaceMethods[fn.Interface] = []*codemill.FuncQualifier{fn}
-					}
+					addInterface(spec.InterfaceMethods, fn)
 				}
 			}
 		}
 	}
-	if len(funcs) > 0 {
-		untrustedFlowSourceSpec.Funcs[pkgPath] = funcs
-	}
-	if len(methods) > 0 {
-		untrustedFlowSourceSpec.Methods[pkgPath] = methods
-	}
-	if len(interfaceMethods) > 0 {
-		untrustedFlowSourceSpec.InterfaceMethods[pkgPath] = interfaceMethods
-	}
-	if len(structs) > 0 {
-		untrustedFlowSourceSpec.StructFieldsmap[pkgPath] = structs
-	}
-	if len(types) > 0 {
-		untrustedFlowSourceSpec.Types[pkgPath] = types
-	}
-
 }
 
-func ExtractTaintTrackingSpec(pkgPath string, taintTrackSels []*codemill.Selector, taintTrackingSpec *codemill.TaintTrackingSpec) {
-	var funcs []*codemill.FuncQualifier
-	methods := make(map[string][]*codemill.FuncQualifier)
-	for _, sel := range taintTrackSels {
+func ExtractTaintTrackingSpec(sels []*codemill.Selector, spec *codemill.TaintTrackingSpec) {
+	for _, sel := range sels {
 		if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
 			//func
 			if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
-				funcs = append(funcs, fn)
+				addFunc(spec.Funcs, fn.PkgPath, fn)
 				continue
 			}
 			if len(fn.Receiver) > 0 {
-				if fns, ok := methods[fn.Receiver]; ok {
-					fns = append(fns, fn)
-					methods[fn.Receiver] = fns
-				} else {
-					methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
-				}
+				addMethod(spec.Methods, fn)
 				continue
 			}
 			if len(fn.Interface) > 0 {
-				if fns, ok := methods[fn.Interface]; ok {
-					fns = append(fns, fn)
-					methods[fn.Interface] = fns
-				} else {
-					methods[fn.Interface] = []*codemill.FuncQualifier{fn}
-				}
+				addInterface(spec.Methods, fn)
 			}
 		}
-
-	}
-	if len(funcs) > 0 {
-		taintTrackingSpec.Funcs[pkgPath] = funcs
-	}
-	if len(methods) > 0 {
-		taintTrackingSpec.Methods[pkgPath] = methods
 	}
 }
 
-func ExtractSQLQueryStringSinkSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.SQLQueryStringSinkSpec) {
-	var funcs []*codemill.FuncQualifier
-	methods := make(map[string][]*codemill.FuncQualifier)
-	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
+func ExtractSQLQueryStringSinkSpec(sels []*codemill.Selector, spec *codemill.SQLQueryStringSinkSpec) {
 	for _, sel := range sels {
 		if sel.Kind == codemill.SelectorKindFunc {
 			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
 				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
-					funcs = append(funcs, fn)
+					addFunc(spec.Funcs, fn.PkgPath, fn)
 					continue
 				}
 				if len(fn.Receiver) > 0 {
-					if fns, ok := methods[fn.Receiver]; ok {
-						fns = append(fns, fn)
-						methods[fn.Receiver] = fns
-					} else {
-						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
-					}
+					addMethod(spec.Methods, fn)
 					continue
 				}
 				if len(fn.Interface) > 0 {
-					if fns, ok := interfaceMethods[fn.Interface]; ok {
-						fns = append(fns, fn)
-						interfaceMethods[fn.Interface] = fns
-					} else {
-						interfaceMethods[fn.Interface] = []*codemill.FuncQualifier{fn}
-					}
+					addInterface(spec.InterfaceMethods, fn)
 				}
 			}
 		}
 	}
-	if len(funcs) > 0 {
-		spec.Funcs[pkgPath] = funcs
-	}
-	if len(methods) > 0 {
-		spec.Methods[pkgPath] = methods
-	}
-	if len(interfaceMethods) > 0 {
-		spec.InterfaceMethods[pkgPath] = interfaceMethods
-	}
 }
 
-func ExtractLoggerCallSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.LoggerCallSpec) {
-	var funcs []*codemill.FuncQualifier
-	methods := make(map[string][]*codemill.FuncQualifier)
-	interfaceMethods := make(map[string][]*codemill.FuncQualifier)
+func ExtractLoggerCallSpec(sels []*codemill.Selector, spec *codemill.LoggerCallSpec) {
 	for _, sel := range sels {
 		if sel.Kind == codemill.SelectorKindFunc {
 			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
 				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
-					funcs = append(funcs, fn)
+					addFunc(spec.Funcs, fn.PkgPath, fn)
 					continue
 				}
 				if len(fn.Receiver) > 0 {
-					if fns, ok := methods[fn.Receiver]; ok {
-						fns = append(fns, fn)
-						methods[fn.Receiver] = fns
-					} else {
-						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
-					}
+					addMethod(spec.Methods, fn)
 					continue
 				}
 				if len(fn.Interface) > 0 {
-					if fns, ok := interfaceMethods[fn.Interface]; ok {
-						fns = append(fns, fn)
-						interfaceMethods[fn.Interface] = fns
-					} else {
-						interfaceMethods[fn.Interface] = []*codemill.FuncQualifier{fn}
-					}
+					addInterface(spec.InterfaceMethods, fn)
 				}
 			}
 		}
 	}
-	if len(funcs) > 0 {
-		spec.Funcs[pkgPath] = funcs
-	}
-	if len(methods) > 0 {
-		spec.Methods[pkgPath] = methods
-	}
-	if len(interfaceMethods) > 0 {
-		spec.InterfaceMethods[pkgPath] = interfaceMethods
-	}
 }
 
-func ExtractHTTPRedirectSpec(pkgPath string, sels []*codemill.Selector, spec *codemill.HTTPRedirectSpec) {
-	var funcs []*codemill.FuncQualifier
-	methods := make(map[string][]*codemill.FuncQualifier)
+func ExtractHTTPRedirectSpec(sels []*codemill.Selector, spec *codemill.HTTPRedirectSpec) {
 	for _, sel := range sels {
 		if sel.Kind == codemill.SelectorKindFunc {
 			if fn, ok := sel.Qualifier.(*codemill.FuncQualifier); ok {
 				if len(fn.Interface) == 0 && len(fn.Receiver) == 0 {
-					funcs = append(funcs, fn)
+					addFunc(spec.Funcs, fn.PkgPath, fn)
 					continue
 				}
 				if len(fn.Receiver) > 0 {
-					if fns, ok := methods[fn.Receiver]; ok {
-						fns = append(fns, fn)
-						methods[fn.Receiver] = fns
-					} else {
-						methods[fn.Receiver] = []*codemill.FuncQualifier{fn}
-					}
+					addMethod(spec.Methods, fn)
 					continue
 				}
 				if len(fn.Interface) > 0 {
-					if fns, ok := methods[fn.Interface]; ok {
-						fns = append(fns, fn)
-						methods[fn.Interface] = fns
-					} else {
-						methods[fn.Interface] = []*codemill.FuncQualifier{fn}
-					}
+					addInterface(spec.Methods, fn)
 				}
 			}
 		}
-	}
-	if len(funcs) > 0 {
-		spec.Funcs[pkgPath] = funcs
-	}
-	if len(methods) > 0 {
-		spec.Methods[pkgPath] = methods
 	}
 }
 
@@ -278,6 +213,44 @@ func addModel(models map[string][]*codemill.Selector, kind string, sel *codemill
 	}
 }
 
+func newSelector(commentFuncs []CommentFunc, sel *codemill.Selector) *codemill.Selector {
+	var isDependsPkg, isFunc, isType, isField bool
+	for _, v := range commentFuncs {
+		if v.Name == "Package" {
+			isDependsPkg = true
+		}
+		if v.Name == "Func" || v.Name == "Method" || v.Name == "Interface" {
+			isFunc = true
+		}
+		if v.Name == "Type" {
+			isType = true
+		}
+		if v.Name == "Field" {
+			isField = true
+		}
+	}
+	if isDependsPkg && isType {
+		return &codemill.Selector{
+			Kind:      codemill.SelectorKindType,
+			Qualifier: &codemill.TypeQualifier{},
+		}
+	}
+	if isDependsPkg && isField {
+		return &codemill.Selector{
+			Kind:      codemill.SelectorKindStruct,
+			Qualifier: &codemill.StructQualifier{},
+		}
+	}
+	if isDependsPkg && isFunc {
+		return &codemill.Selector{
+			Kind:      codemill.SelectorKindFunc,
+			Qualifier: &codemill.FuncQualifier{},
+		}
+	}
+
+	return sel
+}
+
 func parseComment(pkgPath string, f *ast.File, models map[string][]*codemill.Selector) {
 	for _, d := range f.Decls {
 		switch specDecl := d.(type) {
@@ -288,13 +261,13 @@ func parseComment(pkgPath string, f *ast.File, models map[string][]*codemill.Sel
 					if specDecl.Doc != nil {
 						if metaData, err := extractCommentGroupMetaData(specDecl.Doc, "type"); err == nil && len(metaData) > 0 {
 							for _, v := range metaData {
-								sel := &codemill.Selector{
+								sel := newSelector(v.CommentFuncs, &codemill.Selector{
 									Kind: codemill.SelectorKindType,
 									Qualifier: &codemill.TypeQualifier{
 										PkgPath:  pkgPath,
 										TypeName: specName,
 									},
-								}
+								})
 								for _, vv := range v.CommentFuncs {
 									if _, err := funcs.Call(vv.Name, v.ModelKind, sel, vv.Params...); err != nil {
 										fmt.Printf("call %s with error:%v\n", vv.Name, err)
@@ -375,14 +348,14 @@ func parseComment(pkgPath string, f *ast.File, models map[string][]*codemill.Sel
 					}
 
 					for _, v := range metaData {
-						sel := &codemill.Selector{
+						sel := newSelector(v.CommentFuncs, &codemill.Selector{
 							Kind: codemill.SelectorKindFunc,
 							Qualifier: &codemill.FuncQualifier{
 								PkgPath:      pkgPath,
 								FunctionName: specDecl.Name.String(),
 								Receiver:     rec,
 							},
-						}
+						})
 						for _, vv := range v.CommentFuncs {
 							if _, err := funcs.Call(vv.Name, v.ModelKind, sel, vv.Params...); err != nil {
 								fmt.Printf("call %s with error:%v\n", vv.Name, err)
@@ -402,12 +375,6 @@ func extractCommentGroupMetaData(f *ast.CommentGroup, typ string) (ret []Comment
 	for _, d := range f.List {
 		t := strings.TrimSpace(strings.TrimPrefix(d.Text, "//"))
 		content := strings.Split(t, " ")
-		if typ == "type" || typ == "field" {
-			if len(content) > 1 && content[0] == "@codeql" {
-				ret = append(ret, CommentGroupMetaData{ModelKind: content[1]})
-			}
-			return
-		}
 		if len(content) > 1 && content[0] == "@codeql" {
 			var cfs []CommentFunc
 			for i := 2; i < len(content); i++ {
@@ -490,6 +457,9 @@ func trim(name string, s []string) ([]interface{}, error) {
 			}
 		}
 		return []interface{}{param}, nil
+	}
+	if len(s) > 0 && fn.Type().NumIn() == 4 && fn.Type().In(2).Kind() == reflect.String && fn.Type().In(3).Kind() == reflect.Slice && fn.Type().In(3).Elem().String() == "string" {
+		return []interface{}{s[0], s[1:]}, nil
 	}
 	var ret []interface{}
 	for i := 0; i < len(s); i++ {
