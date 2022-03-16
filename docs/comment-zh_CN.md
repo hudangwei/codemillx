@@ -35,6 +35,15 @@ type Param struct {
  Value string
 }
 ```
+标记依赖库(跨包)污点
+```go
+//@codeql untrust Package(github.com/xxx/yyy) Type(Param)
+// Param定义在别的项目中
+type Param struct {
+ Key   string
+ Value string
+}
+```
 
 * 在结构体(struct)的字段(field)上标记，代表该字段是不可信的用户可控输入。
 
@@ -49,10 +58,27 @@ type Context struct {
 }
 ```
 
-* 在方法上添加注释
+标记依赖库(跨包)污点
+```go
+//@codeql untrust Package(github.com/xxx/yyy) Field(Context,Params)
+// Context定义在别的项目中
+type Context struct {
+ app      *Application
+ Params   Params
+ Route    *Route
+ Request  *http.Request
+ Response http.ResponseWriter
+ query    url.Values
+}
+```
+
+* 在方法上添加注释/也支持标记依赖库(跨包)的方法/函数/接口方法
 
 ```go
 //@codeql untrust Param(0)
+//@codeql untrust Package(github.com/xxx/yyy) Method(Context,Decode) Param(0)
+//@codeql untrust Package(github.com/xxx/yyy) Interface(InterfaceName,Decode) Param(0)
+//@codeql untrust Package(github.com/xxx/yyy) Func(Decode) Param(0)
 func (c *Context) Decode(v interface{}) (err error) {
  if c.app.Decoder == nil {
   return ErrDecoderNotRegister
