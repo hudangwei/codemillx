@@ -31,7 +31,7 @@
 # ...
 ```
 
-### 完整配置文件(.github/workflows/codeql.yml)
+### FullExample
 
 ```yaml
 # For most projects, this workflow file will not need changing; you simply need
@@ -115,7 +115,7 @@ jobs:
 
 * fork开源项目到自己仓库下
 * 给开源项目添加注释(自定义标记污点源)[(注释格式说明)](/docs/comment-zh_CN.md)
-* 添加Github Actions CodeQL检测，在项目目录下添加[.github/workflows/codeql.yml](#%E5%AE%8C%E6%95%B4%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6githubworkflowscodeqlyml))文件
+* 添加Github Actions CodeQL检测，在项目目录下添加[.github/workflows/codeql.yml](#fullexample)文件
 * 提交代码，触发检测
 
 如果你看不懂本页内容，先学习下[如何在GitHub工作流中使用CodeQL检测代码](https://docs.microsoft.com/zh-cn/dotnet/architecture/devops-for-aspnet-developers/actions-codeql)
