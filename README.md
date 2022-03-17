@@ -3,6 +3,10 @@ codemillx
 
 English | [简体中文](README-zh_CN.md)
 
+#### 推荐阅读
+
+* [强化GO开源项目安全检测(内含开源项目漏洞挖掘方法)](docs/codeql-action-zh_CN.md)
+
 `codemillx` is a tool for `CodeQL`, extract the comments in the code and generate codeql module.
 
 ## Installation
@@ -34,7 +38,9 @@ codeql query format -qq -i Customizations.qll
 * [Declarative Comments Format](docs/comment.md)
 
 ## Usage
+
 * [How to use `Customizations.qll` file into Github CodeQL Action](docs/codeql-action.md)
+
 ## Reference
 
 * [codemill](https://github.com/gagliardetto/codemill)
