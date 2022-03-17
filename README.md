@@ -1,46 +1,44 @@
 codemillx
 ===
 
-English | [简体中文](README-zh_CN.md)
+[English](README-EN.md) | 简体中文
 
-#### 推荐阅读
+codemillx是一款CodeQL辅助工具，通过提取代码中的注释，并可生成codeql qll库模块。
 
-* [强化GO开源项目安全检测(内含开源项目漏洞挖掘方法)](docs/codeql-action-zh_CN.md)
+## 安装
 
-`codemillx` is a tool for `CodeQL`, extract the comments in the code and generate codeql module.
-
-## Installation
-
-To install `codemillx` use the `go get` command:
+通过 `go get` 命令安装:
 
 ```bash
 go get github.com/hudangwei/codemillx/cmd/codemillx
 ```
 
-## Run
+## 运行
 
-Navigate to your web application folder and execute:
+在你的项目根目录下执行命令:
 
 ```bash
 cd mywebapp && codemillx ./...
 ```
 
-## Requirements
+运行命令后将生成`Customizations.qll`文件
 
-To allow cqlgen to format the generated codeql, you need a recent version of the codeql cli (otherwise it will not be formatted), and have it available as codeql in your PATH.
+## 依赖项
+
+`codemillx`生成codeql模块时会调用`codeql`命令进行格式化，所以依赖本地PATH中有`codeql`。
 
 ```sh
 codeql query format -qq -i Customizations.qll
 ```
 
-## How to add comments in your code?
+## 如何添加代码注释
 
-* [Declarative Comments Format](docs/comment.md)
+* [注释格式说明](docs/comment-zh_CN.md)
 
-## Usage
+## 实践案例 / 推荐阅读
 
-* [How to use `Customizations.qll` file into Github CodeQL Action](docs/codeql-action.md)
+* [强化GO开源项目安全检测(内含开源项目漏洞挖掘方法)](docs/codeql-action-zh_CN.md)
 
-## Reference
+## 参考项目
 
 * [codemill](https://github.com/gagliardetto/codemill)
