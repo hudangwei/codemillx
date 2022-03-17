@@ -3,7 +3,7 @@ codemillx
 
 [English](README.md) | 简体中文
 
-codemillx是一款CodeQL辅助工具，通过提取代码中的注释，并可生成codeql ql模块。
+codemillx是一款CodeQL辅助工具，通过提取代码中的注释，并可生成codeql qll库模块。
 
 ## 安装
 

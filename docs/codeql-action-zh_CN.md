@@ -7,7 +7,7 @@
 
 ## codemillx设计
 
-* 问题1: 如何为项目编写特定的CodeQL查询模块(ql)和库模块(qll)，提升检测能力
+* 问题1: 如何为项目编写特定的CodeQL查询模块(ql)和库模块(qll)，提升CodeQL检测能力
 * 问题2: 在GitHub Actions中配置的CodeQL检测，如何能使用我们编写的qll模块
 
 为了解决这2个问题，我们制造了`codemillx`这款辅助工具。
@@ -17,7 +17,7 @@
 
 ## 强化GO开源项目安全检测
 
-只需两步：
+### 只需两步
 
 1. 在项目代码中添加一些特定注释[(注释格式说明)](/docs/comment-zh_CN.md)
 2. 修改Github Actions的CodeQL检测配置文件(.github/workflows/codeql.yml)
@@ -31,7 +31,7 @@
 # ...
 ```
 
-#### 完整配置文件(.github/workflows/codeql.yml)
+### 完整配置文件(.github/workflows/codeql.yml)
 
 ```yaml
 # For most projects, this workflow file will not need changing; you simply need
@@ -114,8 +114,8 @@ jobs:
 ### 步骤
 
 * fork开源项目到自己仓库下
-* 给开源项目添加注释(自定义标记污点源)
-* 添加CodeQL配置文件.github/workflows/codeql.yml
+* 给开源项目添加注释(自定义标记污点源)[(注释格式说明)](/docs/comment-zh_CN.md)
+* 添加Github Actions CodeQL检测，在项目目录下添加[.github/workflows/codeql.yml](#%E5%AE%8C%E6%95%B4%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6githubworkflowscodeqlyml))文件
 * 提交代码，触发检测
 
 如果你看不懂本页内容，先学习下[如何在GitHub工作流中使用CodeQL检测代码](https://docs.microsoft.com/zh-cn/dotnet/architecture/devops-for-aspnet-developers/actions-codeql)
