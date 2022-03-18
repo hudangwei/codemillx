@@ -27,7 +27,9 @@
 ```yaml
 # ...
 - name: Generate And Replace CodeQL Customizations
-  run: go run github.com/hudangwei/codemillx/cmd/codemillx -customizeCodeQLAction=true ./...
+  run: |
+    go install github.com/hudangwei/codemillx/cmd/codemillx@latest
+    codemillx -customizeCodeQLAction=true ./...
 # ...
 ```
 
@@ -84,7 +86,9 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
     - name: Generate And Replace CodeQL Customizations
-      run: go run github.com/hudangwei/codemillx/cmd/codemillx -customizeCodeQLAction=true ./...
+      run: |
+        go install github.com/hudangwei/codemillx/cmd/codemillx@latest
+        codemillx -customizeCodeQLAction=true ./...
         
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
