@@ -13,9 +13,10 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func LoadProject(patterns []string) ([]*packages.Package, error) {
+func LoadProject(patterns, flags []string) ([]*packages.Package, error) {
 	config := &packages.Config{
-		Mode: packages.LoadSyntax,
+		Mode:       packages.LoadSyntax,
+		BuildFlags: flags,
 	}
 	pkgs, err := packages.Load(config, patterns...)
 	if err != nil {
